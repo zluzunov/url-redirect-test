@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Tests a set of url for return cods and new addresses
+Tests a set of urls for return cods and new addresses
 """
 import requests
 import csv
