@@ -45,7 +45,6 @@ def parse_requests(in_path, out_path):
 
 def get_destination_urls(in_file, out_file):
     """
-
     :param in_file: input csv file with two columns - url that need to be tested.
     :param out_file: output csv with columns [query_url, expected_final, final_url, status_code] with one column - url that need to be tested.
     :return out_csv:
