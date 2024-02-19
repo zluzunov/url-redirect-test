@@ -5,10 +5,10 @@ Tests a set of urls for return cods and new addresses
 import requests
 import csv
 
-
 KEY_REPORTED_STATUS_CODE_1 = 200
 KEY_REPORTED_STATUS_CODE_2 = 404
 KEY_CONNECT_ERROR = 0
+KEY_URLS_TESTED = 0
 
 MESSAGE_ERROR_GET_URL = "Failed to get results for url: {}\n\tError message: {}."
 MESSAGE_REPORT_PROBLEM = "\tProblem with: {}"
@@ -20,10 +20,10 @@ COLUMN_QUERY_URL = 0
 
 INPUT_DIR = 'input/'
 OUTPUT_DIR = 'output/'
-IN_FILE = 'input_urls_shop.tab'
+IN_FILE = 'input_urls.tab'
 OUT_FILE = 'checked_urls.tab'
-TEST_SET = [['http://pestimenergia.bg/pellet_comfort_mini.htm', ],
-            ['http://pestimenergia.bg/news23_en.htm']
+TEST_SET = [['http://localhost.bg/some_addres_mini.htm', ],
+            ['http://localhost.bg/some_address_en.htm']
             ]
 
 
@@ -33,7 +33,7 @@ def main():
 
 def parse_requests(in_path, out_path):
     """
-    opens the files as csv objects and sends them to get_dstination_urls()
+    opens the files as csv objects and sends them to get_destination_urls()
     :param in_path: path to input csv
     :param out_path: path to output csv
     :return :
@@ -46,13 +46,15 @@ def parse_requests(in_path, out_path):
 def get_destination_urls(in_file, out_file):
     """
     :param in_file: input csv file with two columns - url that need to be tested.
-    :param out_file: output csv with columns [query_url, expected_final, final_url, status_code] with one column - url that need to be tested.
+    :param out_file: output csv with columns [query_url, expected_final, final_url, status_code] with one column - url
+    that need to be tested.
     :return out_csv:
     """
     in_csv = csv.reader(in_file, delimiter='\t')
     out_csv = csv.writer(out_file, delimiter='\t', lineterminator='\n')
     flush_status = 0
     code_count = {}
+    code_count.setdefault(KEY_URLS_TESTED, 0)
     for i, row in enumerate(in_csv, start=1):
         url_string = row[COLUMN_QUERY_URL]
         try:
@@ -77,12 +79,14 @@ def get_destination_urls(in_file, out_file):
                                               code_count.get(KEY_REPORTED_STATUS_CODE_2, 0),
                                               code_count.get(KEY_CONNECT_ERROR, 0)
                                               ))
-    print(MESSAGE_ALL_URLS_CHECKED.format(i,
+        code_count[KEY_URLS_TESTED] += 1
+    print(MESSAGE_ALL_URLS_CHECKED.format(code_count[KEY_URLS_TESTED],
                                           code_count.get(KEY_REPORTED_STATUS_CODE_1, 0),
                                           code_count.get(KEY_REPORTED_STATUS_CODE_2, 0),
                                           code_count.get(KEY_CONNECT_ERROR, 0)
                                           )
           )
+
 
 if __name__ == '__main__':
     main()
