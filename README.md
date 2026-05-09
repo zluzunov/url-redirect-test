@@ -15,6 +15,6 @@ Run tests: pytest
 Run tests with coverage: pytest –cov
 
 ## Files
-•  test_rewrite_results.py - Main script
-•  tests/test_rewrite_results.py - Unit tests
-•  requirements-dev.txt - Development dependencies
+- test_rewrite_results.py - Main script
+- tests/test_rewrite_results.py - Unit tests
+- requirements-dev.txt - Development dependencies
