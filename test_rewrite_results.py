@@ -1,92 +1,77 @@
 #!/usr/bin/env python
 """
-Tests a set of urls for return cods and new addresses
+Test URLs against Apache mod_rewrite rules.
+Reads from input/input_urls.tab and writes results to output/checked_urls.tab.
 """
-import requests
+
+from pathlib import Path
+import sys
 import csv
-
-KEY_REPORTED_STATUS_CODE_1 = 200
-KEY_REPORTED_STATUS_CODE_2 = 404
-KEY_CONNECT_ERROR = 0
-KEY_URLS_TESTED = 0
-
-MESSAGE_ERROR_GET_URL = "Failed to get results for url: {}\n\tError message: {}."
-MESSAGE_REPORT_PROBLEM = "\tProblem with: {}"
-MESSAGE_ALL_URLS_CHECKED = "All {} URLs checked: Status 200: {}, Status 404: {}, Connect errors: {}."
-MESSAGE_CHECKED_URLS = "{} URLs checked: Status 200: {}, Status 404: {}, Connect errors: {}."
-
-FLUSH_INTERVAL = 100
-COLUMN_QUERY_URL = 0
-
-INPUT_DIR = 'input/'
-OUTPUT_DIR = 'output/'
-IN_FILE = 'input_urls.tab'
-OUT_FILE = 'checked_urls.tab'
-TEST_SET = [['http://localhost.bg/some_addres_mini.htm', ],
-            ['http://localhost.bg/some_address_en.htm']
-            ]
+import requests
+from requests.exceptions import RequestException
 
 
-def main():
-    parse_requests(INPUT_DIR + IN_FILE, OUTPUT_DIR + OUT_FILE)
+INPUT_DIR = Path("input")
+OUTPUT_DIR = Path("output")
+INPUT_FILE = INPUT_DIR / "input_urls.tab"
+OUTPUT_FILE = OUTPUT_DIR / "checked_urls.tab"
+
+FLUSH_EVERY = 100
+TIMEOUT = 10
 
 
-def parse_requests(in_path, out_path):
-    """
-    opens the files as csv objects and sends them to get_destination_urls()
-    :param in_path: path to input csv
-    :param out_path: path to output csv
-    :return :
-    """
-    with open(in_path, 'r', encoding='utf8') as f:
-        with open(out_path, 'w', encoding='utf8') as j:
-            get_destination_urls(f, j)
+def main() -> None:
+    if not INPUT_FILE.exists():
+        print(f"Error: Input file not found: {INPUT_FILE}")
+        sys.exit(1)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    process_urls(INPUT_FILE, OUTPUT_FILE)
+    print("✅ Done!")
 
 
-def get_destination_urls(in_file, out_file):
-    """
-    :param in_file: input csv file with two columns - url that need to be tested.
-    :param out_file: output csv with columns [query_url, expected_final, final_url, status_code] with one column - url
-    that need to be tested.
-    :return out_csv:
-    """
-    in_csv = csv.reader(in_file, delimiter='\t')
-    out_csv = csv.writer(out_file, delimiter='\t', lineterminator='\n')
-    flush_status = 0
-    code_count = {}
-    code_count.setdefault(KEY_URLS_TESTED, 0)
-    for i, row in enumerate(in_csv, start=1):
-        url_string = row[COLUMN_QUERY_URL]
-        try:
-            r = requests.get(url_string)
-        except requests.exceptions.RequestException as e:
-            code_count.setdefault(KEY_CONNECT_ERROR, 0)
-            code_count[KEY_CONNECT_ERROR] += 1
-            print(MESSAGE_ERROR_GET_URL.format(url_string, e))
-            continue
-        code_count.setdefault(r.status_code, 0)
-        code_count[r.status_code] += 1
-
-        if r.status_code == KEY_REPORTED_STATUS_CODE_2:
-            print(MESSAGE_REPORT_PROBLEM.format(url_string))
-
-        out_csv.writerow([url_string, r.url, r.status_code])
-        if i - flush_status == FLUSH_INTERVAL:
-            out_file.flush()
-            flush_status = i
-            print(MESSAGE_CHECKED_URLS.format(i,
-                                              code_count.get(KEY_REPORTED_STATUS_CODE_1, 0),
-                                              code_count.get(KEY_REPORTED_STATUS_CODE_2, 0),
-                                              code_count.get(KEY_CONNECT_ERROR, 0)
-                                              ))
-        code_count[KEY_URLS_TESTED] += 1
-    print(MESSAGE_ALL_URLS_CHECKED.format(code_count[KEY_URLS_TESTED],
-                                          code_count.get(KEY_REPORTED_STATUS_CODE_1, 0),
-                                          code_count.get(KEY_REPORTED_STATUS_CODE_2, 0),
-                                          code_count.get(KEY_CONNECT_ERROR, 0)
-                                          )
-          )
+def process_urls(input_path: Path, output_path: Path) -> None:
+    session = requests.Session()
+    
+    with open(input_path, "r", encoding="utf-8") as f_in, \
+         open(output_path, "w", encoding="utf-8", newline="") as f_out:
+        
+        reader = csv.reader(f_in, delimiter="\t")
+        writer = csv.writer(f_out, delimiter="\t", lineterminator="\n")
+        
+        stats = {"total": 0, "errors": 0, 200: 0, 404: 0}
+        
+        for i, row in enumerate(reader, 1):
+            if not row or not row[0 0].strip()
+            final_url, status = check_url(session, url)
+            
+            writer.writerow( )
+            
+            stats += 1
+            if status == 0:
+                stats += 1
+            else:
+                stats = stats.get(status, 0) + 1
+            
+            if i % FLUSH_EVERY == 0:
+                f_out.flush()
+                print(f"Processed {i} URLs... (200: {stats.get(200,0)}, "
+                      f"404: {stats.get(404,0)}, Errors: {stats })")
+        
+        print(f"\nFinished! Total URLs: {stats }, "
+              f"200: {stats.get(200,0)}, 404: {stats.get(404,0)}, "
+              f"Errors: {stats }")
 
 
-if __name__ == '__main__':
+def check_url(session: requests.Session, url: str) -> tuple :
+    try:
+        r = session.get(url, timeout=TIMEOUT, allow_redirects=True)
+        return r.url, r.status_code
+    except RequestException as e:
+        print(f"❌ Failed to fetch {url}: {e}")
+        return url, 0
+
+
+if __name__ == "__main__":
     main()
